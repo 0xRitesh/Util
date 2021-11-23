@@ -1,0 +1,26 @@
+/* Taken from React UI (https://github.com/reach/reach-ui/blob/master/packages/visually-hidden/src/index.tsx) */
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+
+  /* https: //medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe */
+  white-space: nowrap;
+  word-wrap: normal;
+}
+
+/* make visible on focus e.g. for 'Skip to content buttons' */
+.visually-hidden:focus {
+  clip: unset;
+  height: unset;
+  margin: unset;
+  width: unset;
+  top: 0;
+  left: 0;
+}
