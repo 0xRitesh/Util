@@ -1,0 +1,20 @@
+#!/bin/env bash
+# A script that execute a program silently without showing stdout or stderr on terminal.
+
+# If there's no argument
+if [ ! $1 ]; then
+  echo "$0 [progran] [arguments]"
+  exit 1
+fi
+
+# Check if the script was run as superuser privilege
+if [[ $(id -u) == 0 ]]; then
+  echo "warning: program was executed under root priviledge"
+fi
+
+# If argument(s) wasn't passed execute the program else execute the program with passed argument(s)
+if [ ! $2 ]; then 
+  nohup $1 &> /dev/null &
+else
+  nohup $1 ${@:2} &> /dev/null &
+fi
