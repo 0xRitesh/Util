@@ -1,0 +1,94 @@
+#!/bin/env bash
+# A tiny system information script.
+
+## The "has" function was taken from https://github.com/dylanaraps/pfetch/blob/a906ff89680c78cec9785f3ff49ca8b272a0f96b/pfetch#L53
+has() {
+    _cmd=$(command -v "$1") 2>/dev/null || return 1
+    [ -x "$_cmd" ] || return 1
+}
+
+# Get kernel name
+os=$(uname -s)
+
+# Get distro name. Note: "lsb_release" utility may not exist in every distro. 
+distro=$(lsb_release -sd | tr -d '"')
+
+# Get the host name
+hostname=$(cat /etc/hostname)
+
+# Get kernel version
+kernel=$(uname -r)
+
+# Get system uptime
+uptime=$(uptime -p | sed "s/^[up \t]*//;s/[ \t]*$//")
+
+# Get a list of packages and check their length 
+pkgs=$(
+   case $os in
+      (Linux*)
+         # Using preinstalled package managers
+		   has apt        && apt list
+		   has xbps-query && xbps-query -l
+		   has pacman-key && pacman -Qq 
+		   has rpm        && rpm -qa
+		   has apk        && apk info
+		   has guix       && guix package --list-installed
+		   has opkg       && opkg list-installed
+         
+         # Get a list from directories
+         has kiss       && printf '%s\n' /var/db/kiss/installed/*/
+         has cpt-list   && printf '%s\n' /var/db/cpt/installed/*/
+         has brew       && printf '%s\n' "$(brew --cellar)/"*
+         has emerge     && printf '%s\n' /var/db/pkg/*/*/
+         has pkgtool    && printf '%s\n' /var/log/packages/*
+         has eopkg      && printf '%s\n' /var/lib/eopkg/package/*
+         # Get a list from Nix
+         has nix-store  && {
+            nix-store -q --requisites /run/current-system/sw
+            nix-store -q --requisites ~/.nix-profile
+         }
+		;;
+      (Darwin*)
+         has pkgin && pkgin list
+         has dpkg  && dpkg-query -f '.\n' -W
+      ;;
+      (FreeBSD* | Dragonfly* | Mid*)
+         pkg info
+      ;;
+      (OpenBSD*)
+         printf '%s\n' /var/db/pkg/*/
+      ;;
+      (NetBSD*)
+         pkg_info
+      ;;
+      (Haiku*)
+         printf '%s\n' /boot/system/package-links/*
+      ;;
+      (Minix*)
+         printf '%s\n' /usr/pkg/var/db/pkg/*/
+      ;;
+      (SunOS*)
+         has pkginfo && pkginfo -i
+         has pkg     && pkg list
+      ;;
+      (IRIX*)
+         versions -b
+      ;;
+   esac | wc -l | tr -d "[:blank:]"
+)
+
+# Vendor of the systen BIOS
+bios_vendor=$(cat /sys/devices/virtual/dmi/id/bios_vendor 2>/dev/null || echo unknown)
+
+# Version release of the BIOS
+bios_release=$(cat /sys/devices/virtual/dmi/id/bios_release 2>/dev/null || echo unknown)
+
+# Now print all of gathered information on terminal
+printf "  \033[1;97m    $USER@$hostname \033[0m
+      \033[1;91mbios   $bios_release, $bios_vendor\033[0m
+      \033[1;96mos     $distro\033[0m
+      \033[1;92mkernel $kernel\033[0m
+      \033[1;93mshell  ${SHELL##*/}\033[0m
+      \033[1;94muptime $uptime\033[0m
+      \033[1;95mpkgs   $pkgs\033[0m
+"

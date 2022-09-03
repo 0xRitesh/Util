@@ -1,0 +1,5 @@
+#!/bin/bash
+## Shows what shell is default for current or a specific user
+
+user="$USER" || $1
+awk -F: '/${user}/ { print $7}' /etc/passwd
